@@ -1,0 +1,31 @@
+language: node_js
+
+node_js:
+  - "node"
+  - "lts/*"
+  - "8"
+  - "6"
+
+before_script:
+  - "npm install nyc --global"
+
+script:
+  - "npm run build"
+  - "nyc npm test"
+
+after_success:
+  - "npm install coveralls@~3.0.0 --global"
+  - "nyc report --reporter=text-lcov | coveralls"
+
+before_deploy:
+  - "npm run clean"
+  - "npm run build -- -P ./tsconfig.prod.json"
+
+deploy:
+  skip_cleanup: true
+  provider: npm
+  email: "arylo.open@gmail.com"
+  api_key: "${NPM_TOKEN}"
+  on:
+    branch: master
+    node_js: "node"

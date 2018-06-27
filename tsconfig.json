@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "types": [
+      "node"
+    ],
+    "importHelpers": true,
+    "pretty": true,
+    "sourceMap": true,
+    "newLine": "LF",
+    "outDir": "dist",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": [
+    "lib/**/*"
+  ]
+}
