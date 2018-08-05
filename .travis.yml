@@ -24,7 +24,7 @@ before_deploy:
 deploy:
   skip_cleanup: true
   provider: npm
-  email: "arylo.open@gmail.com"
+  email: "arylo.open+npm@gmail.com"
   api_key: "${NPM_TOKEN}"
   on:
     branch: master

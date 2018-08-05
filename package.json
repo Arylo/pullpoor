@@ -24,6 +24,7 @@
     "dist",
     "lib"
   ],
+  "yVersion": "2.0.4",
   "author": "AryloYeung <arylo.open@gmail.com>",
   "repository": {
     "type": "git",
