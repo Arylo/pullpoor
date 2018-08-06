@@ -16,3 +16,5 @@ export const save = () => {
     const cacheData = JSON.stringify(core.get()) || { };
     writeFileSync(CacheFilePath, cacheData, FILE_OPTIONS);
 };
+
+// TODO: 异步保存缓存

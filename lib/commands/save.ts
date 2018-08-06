@@ -4,8 +4,8 @@ import minimist = require("minimist");
 import ora = require("ora");
 import { dirname } from "path";
 import * as core from "pullpoor-core";
-import { getArgv } from "../argv";
 import { CacheFilePath } from "../constants";
+import { getArgv } from "../helpers/argv";
 import * as cache from "../helpers/cache";
 import { exit } from "../helpers/exit";
 import { FILE_OPTIONS } from "../helpers/options";
@@ -55,6 +55,7 @@ export const handler = async (p = argv._[1]) => {
     } catch (error) {
         spinner.fail();
     }
+    // TODO: 检查代理可用性
 
     if (argv.useCache) {
         spinner = ora("Saving Cache File").start();

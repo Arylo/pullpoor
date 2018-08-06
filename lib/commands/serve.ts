@@ -5,8 +5,8 @@ import ora = require("ora");
 import { networkInterfaces } from "os";
 import * as core from "pullpoor-core";
 import request = require("request");
-import { getArgv } from "../argv";
 import { CacheFilePath } from "../constants";
+import { getArgv } from "../helpers/argv";
 import * as cache from "../helpers/cache";
 import { exit } from "../helpers/exit";
 
@@ -22,6 +22,9 @@ const argv = getArgv({
 
 export const handler = async () => {
     await init();
+
+    // TODO: 启动定时获取
+
     const app = express();
     const keys = [
         "domain",
@@ -93,6 +96,7 @@ export const init = async () => {
     } catch (error) {
         spinner.fail();
     }
+    // TODO: 检查代理可用性
 
     if (existsSync(CacheFilePath)) {
         try {

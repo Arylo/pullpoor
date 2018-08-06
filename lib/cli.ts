@@ -1,7 +1,7 @@
 import CFonts = require("cfonts");
 import updateNotifier = require("update-notifier");
-import { command, getArgv } from "./argv";
 import { commands, pkg } from "./constants";
+import { command, getArgv } from "./helpers/argv";
 
 const argv = getArgv();
 
