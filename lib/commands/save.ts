@@ -1,11 +1,14 @@
-import { existsSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, statSync, writeFileSync } from "fs";
 import makeDir = require("make-dir");
 import minimist = require("minimist");
 import ora = require("ora");
-import { tmpdir } from "os";
-import { dirname, resolve } from "path";
+import { dirname } from "path";
 import * as core from "pullpoor-core";
 import { getArgv } from "../argv";
+import { CacheFilePath } from "../constants";
+import * as cache from "../helpers/cache";
+import { exit } from "../helpers/exit";
+import { FILE_OPTIONS } from "../helpers/options";
 import { realPath } from "../helpers/realPath";
 
 interface IArgv extends minimist.ParsedArgs {
@@ -22,23 +25,23 @@ const argv = getArgv({
     string: ["format"]
 }) as IArgv;
 
-const CacheFilePath = resolve(tmpdir(), "uupers/pullpoor", "db.json");
-
-const FILE_OPTIONS = {
-    encoding: "utf-8"
-};
-
 export const handler = async (p = argv._[1]) => {
     if (!p) {
-        // TODO:
+        exit("Miss the file path");
         return;
     }
     let spinner;
+    const filePath = realPath(p);
+
+    if (existsSync(filePath) && !statSync(filePath).isFile()) {
+        exit("The path isn't a file path");
+        return;
+    }
 
     if (argv.useCache && existsSync(CacheFilePath)) {
         spinner = ora("Loading Cache File").start();
         try {
-            core.init(JSON.parse(readFileSync(CacheFilePath, FILE_OPTIONS)));
+            cache.load();
             spinner.succeed("Loaded Cache File");
         } catch (error) {
             spinner.fail();
@@ -55,12 +58,8 @@ export const handler = async (p = argv._[1]) => {
 
     if (argv.useCache) {
         spinner = ora("Saving Cache File").start();
-        if (!existsSync(dirname(CacheFilePath))) {
-            makeDir.sync(dirname(CacheFilePath));
-        }
-        const cacheData = JSON.stringify(core.get()) || { };
         try {
-            writeFileSync(CacheFilePath, cacheData, FILE_OPTIONS);
+            cache.save();
             spinner.succeed(`Saved Cache File to ${CacheFilePath}`);
         } catch (error) {
             spinner.fail();
@@ -69,7 +68,6 @@ export const handler = async (p = argv._[1]) => {
 
     try {
         spinner = ora("Saving File").start();
-        const filePath = realPath(p);
         if (!existsSync(dirname(filePath))) {
             makeDir.sync(dirname(filePath));
         }

@@ -1,14 +1,29 @@
-# pullpoor
+# Pullpoor
 
-The project is generated in [`arylo-init`](https://www.npmjs.com/package/arylo-init)
+It would pull poor which use the notes from any banks
 
 [![node][NPM_URL]][NPM_HREF]
 [![Travis][TRAVIS_URL]][TRAVIS_HREF]
-[![Coveralls][COVERALLS_URL]][COVERALLS_HREF]
+<!-- [![Coveralls][COVERALLS_URL]][COVERALLS_HREF] -->
 [![Known Vulnerabilities][SNYK_URL]][SNYK_HREF]
 [![David][DAVID_URL]][DAVID_HREF]
 [![Author][AUTHOR_URL]][AUTHOR_HREF]
 [![license][LICENSE_URL]][LICENSE_HREF]
+
+## Usage
+
+### Run it with npx(npm >= 5.2.0)
+
+```
+npx pullpoor
+```
+
+### Install and Run
+
+```
+npm i -g pullpoor
+pullpoor
+```
 
 [NPM_URL]: https://img.shields.io/node/v/pullpoor.svg?style=flat-square&maxAge=600
 [NPM_HREF]: https://www.npmjs.com/package/pullpoor
