@@ -96,12 +96,8 @@ export const init = async () => {
     } catch (error) {
         spinner.fail();
     }
-    // TODO: 检查代理可用性
 
-    if (existsSync(CacheFilePath)) {
-        try {
-            cache.save();
-        // tslint:disable-next-line:no-empty
-        } catch (error) { }
-    }
+    cache.saveAsync();
+
+    // TODO: 检查代理可用性
 };
