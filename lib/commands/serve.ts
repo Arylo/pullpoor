@@ -1,6 +1,7 @@
 import express = require("express");
 import { existsSync } from "fs";
 import { merge, sample } from "lodash";
+import schedule = require("node-schedule");
 import ora = require("ora");
 import { networkInterfaces } from "os";
 import * as core from "pullpoor-core";
@@ -21,9 +22,12 @@ const argv = getArgv({
 });
 
 export const handler = async () => {
+    let spinner;
     await init();
 
-    // TODO: 启动定时获取
+    spinner = ora("Setup Timer").start();
+    startTimer();
+    spinner.succeed();
 
     const app = express();
     const keys = [
@@ -55,7 +59,7 @@ export const handler = async () => {
         }).pipe(res);
     });
 
-    const spinner = ora("Setup Server").start();
+    spinner = ora("Setup Server").start();
     return app.listen(argv.p, "0.0.0.0", (err) => {
         if (err) {
             spinner.fail();
@@ -100,4 +104,19 @@ export const init = async () => {
     cache.saveAsync();
 
     // TODO: 检查代理可用性
+};
+
+export const startTimer = () => {
+    let isRunning = false;
+    const j = schedule.scheduleJob("*/15 * * * *", async () => {
+        if (isRunning) {
+            return;
+        }
+        isRunning = true;
+        try {
+            cache.saveAsync();
+        // tslint:disable-next-line:no-empty
+        } catch (error) { }
+        isRunning = false;
+    });
 };
