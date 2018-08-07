@@ -21,3 +21,12 @@ export const commands = readdirSync(commandsPath)
     .filter((fileName) => /\.js$/.test(fileName))
     .filter((fileName) => statSync(resolve(commandsPath, fileName)).isFile())
     .map((fileName) => fileName.replace(/\.js$/, ""));
+
+const DEFAULT_COPYRIGHT = "pullpoor";
+let copyright = DEFAULT_COPYRIGHT;
+
+export const setCopyright = (str = DEFAULT_COPYRIGHT) => {
+    copyright = str;
+};
+
+export const getCopyright = () => copyright;

@@ -17,9 +17,10 @@
   },
   "keywords": [
     "arylo",
-    "uupers",
     "pullpoor",
-    "proxy"
+    "proxy",
+    "proxypool",
+    "proxy-server"
   ],
   "engines": {
     "node": ">=6"
