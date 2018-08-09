@@ -1,6 +1,6 @@
 {
   "name": "pullpoor",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "It would pull poor which use the notes from any banks",
   "main": "dist/index.js",
   "types": "lib/index.ts",
