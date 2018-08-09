@@ -4,7 +4,7 @@ import * as constants from "../constants";
 
 export const handler = () => {
     process.stdout.write([
-        `Cli:  ${constants.version}`,
+        `Cli:  ${constants.VERSION}`,
         `Core: ${core.version()}`
     ].join("\n"));
 };

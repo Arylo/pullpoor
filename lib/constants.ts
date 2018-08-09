@@ -3,18 +3,18 @@ import { readdirSync, statSync } from "fs";
 import { tmpdir } from "os";
 import { dirname, resolve } from "path";
 
-export const rootPath = dirname(findUp.sync("package.json"));
+export const ROOT_PATH = dirname(findUp.sync("package.json"));
 
-export const p0 = readdirSync(resolve(rootPath, "bin"))[0];
+export const p0 = readdirSync(resolve(ROOT_PATH, "bin"))[0];
 
 // tslint:disable-next-line:no-var-requires
-export const pkg = require(resolve(rootPath, "package.json"));
+export const PKG = require(resolve(ROOT_PATH, "package.json"));
 
-export const binPath = resolve(rootPath, "bin", p0);
+export const binPath = resolve(ROOT_PATH, "bin", p0);
 
 export const CacheFilePath = resolve(tmpdir(), "uupers/pullpoor", "db.json");
 
-export const version = pkg.version;
+export const VERSION = PKG.version;
 
 const commandsPath = resolve(__dirname, "commands");
 export const commands = readdirSync(commandsPath)
@@ -30,3 +30,6 @@ export const setCopyright = (str = DEFAULT_COPYRIGHT) => {
 };
 
 export const getCopyright = () => copyright;
+
+export const CHECK_THREAD = 100;
+export const CHECK_TIMEOUT = 3000;

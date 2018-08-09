@@ -1,4 +1,4 @@
-import { binPath, commands, p0, version } from "../constants";
+import { binPath, commands, p0, VERSION } from "../constants";
 
 export const handler = () => {
     process.stdout.write([
@@ -8,6 +8,6 @@ export const handler = () => {
         "where <command> is one of",
         `  ${commands.join(", ")}`,
         "",
-        `${p0}@${version} ${binPath}`
+        `${p0}@${VERSION} ${binPath}`
     ].join("\n"));
 };

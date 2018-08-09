@@ -1,39 +1,50 @@
 import express = require("express");
 import { existsSync } from "fs";
 import { difference, merge, sample, sampleSize } from "lodash";
+import minimist = require("minimist");
 import schedule = require("node-schedule");
 import ora = require("ora");
 import { networkInterfaces } from "os";
+import ProgressBar = require("progress");
 import * as core from "pullpoor-core";
 import request = require("request");
-import { CacheFilePath } from "../constants";
+import { CacheFilePath, CHECK_THREAD, CHECK_TIMEOUT } from "../constants";
 import { getArgv } from "../helpers/argv";
 import * as cache from "../helpers/cache";
-import { getNote, list, setNoteStatus } from "../helpers/checker";
+import * as checker from "../helpers/checker";
 import { exit } from "../helpers/exit";
-import { checkNotes } from "./../helpers/checker";
+
+interface IArgv extends minimist.ParsedArgs {
+    check: boolean;
+    p: number;
+    port: number;
+    thread: number;
+    timeout: number;
+}
 
 const argv = getArgv({
     alias: {
         p: "port"
     },
+    boolean: [ "check" ],
     default: {
+        check: true,
         port: 7000 + parseInt(`${Math.random() * 3000}`, 10),
-        thread: 250,
-        timeout: 3000
+        thread: CHECK_THREAD,
+        timeout: CHECK_TIMEOUT
     },
     string: ["port", "thread", "timeout"]
-});
+}) as IArgv;
 
 if (typeof argv.port !== "number" || argv.port < 0) {
     exit("Port Field must number");
 }
 
-if (typeof argv.timeout !== "number" || argv.timeout < 0) {
+if (argv.check && typeof argv.timeout !== "number" || argv.timeout < 0) {
     exit("Timeout Field must number");
 }
 
-if (typeof argv.thread !== "number" || argv.thread <= 0) {
+if (argv.check && typeof argv.thread !== "number" || argv.thread <= 0) {
     exit("Thread Field must number");
 }
 
@@ -62,11 +73,11 @@ export const handler = async () => {
             obj[key] = req[key];
             return obj;
         }, { } as any), {
-            proxy: getNote(),
+            proxy: checker.getNote(),
             timeout: argv.timeout
         });
         request(opts, (err) => {
-            setNoteStatus(opts.proxy, !!err);
+            checker.setNoteStatus(opts.proxy, !!err);
             if (err) {
                 res.status(502);
                 res.end();
@@ -119,12 +130,19 @@ export const init = async () => {
 
     cache.saveAsync();
 
-    spinner = ora("Some Notes Checking").start();
     const num = Math.max(Math.ceil(core.getNotes().length * 0.2), argv.thread);
     const checkList = sampleSize(core.getNotes(), num);
-    await checkNotes(checkList, argv.thread);
-    spinner.succeed("Some Notes Checked");
-    ora(`Have ${list.checked.length - list.blocked.length} Notes`).start().info();
+    const bar = new ProgressBar("Checking [:bar] :rate/ips :percent :etas", {
+        total: checkList.length,
+        width: 20
+    });
+    checker.setTimeout(argv.timeout);
+    await checker.checkNotes(checkList, argv.thread, {
+        noteCb: () => {
+            bar.tick();
+        }
+    });
+    ora(`Have ${checker.getTrueList().length} Notes`).start().info();
 };
 
 export const startTimer = () => {
@@ -149,14 +167,16 @@ export const startTimer = () => {
             return;
         }
         isRunningMap.check = true;
+        let checkList: string[];
         // 新增检查
-        const newList = difference(core.getNotes(), list.checked);
+        checkList = difference(core.getNotes(), checker.getCheckList());
         const num = Math.max(Math.ceil(core.getNotes().length * 0.2), argv.thread);
-        await checkNotes(sampleSize(newList, num), argv.thread);
+        await checker.checkNotes(sampleSize(checkList, num), argv.thread);
         // 二次检查
         const blockList = [ ];
-        const checkList = difference(list.checked, newList, list.blocked);
-        await checkNotes(sampleSize(checkList, Math.ceil(checkList.length * 0.2)), argv.thread, {
+        checkList = difference(checker.getCheckList(), checkList, checker.getBlockList());
+        checkList = sampleSize(checkList, Math.ceil(checkList.length * 0.2));
+        await checker.checkNotes(checkList, argv.thread, {
             noteCb: (err, uri) => {
                 if (err) {
                     blockList.push(uri);
@@ -164,7 +184,9 @@ export const startTimer = () => {
             }
         });
         // 败者复活
-        checkNotes(sampleSize(difference(list.blocked, blockList), 10), 10);
+        checkList = difference(checker.getBlockList(), blockList);
+        checkList = sampleSize(checkList, Math.ceil(checkList.length * 0.2));
+        await checker.checkNotes(checkList, argv.thread);
         isRunningMap.check = false;
     });
 };

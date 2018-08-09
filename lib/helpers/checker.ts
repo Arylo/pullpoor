@@ -1,11 +1,13 @@
 import { difference, sample } from "lodash";
 import * as core from "pullpoor-core";
 import request = require("request");
+import { CHECK_TIMEOUT } from "../constants";
 
-export const list = {
+const list = {
     blocked: [ ],
     checked: [ ]
 };
+let timeout = CHECK_TIMEOUT;
 
 const getCheckedNote = (index = 0): string => {
     let note: string;
@@ -39,7 +41,7 @@ export const setNoteStatus = (note: string, isBlock: boolean) => {
     }
 };
 
-export const getCheckUrl = () => {
+const getCheckUrl = () => {
     return sample([
         "http://ip-api.com/json",
         "http://www.baidu.com",
@@ -60,7 +62,7 @@ export const checkNotes = async (notes: string[], threadNum: number, cbs?) => {
         const end = Math.min(start + threadNum, notes.length);
         const arr = [ ];
         for (const uri of notes.slice(start, end)) {
-            const opts = { timeout: 3000, proxy: uri };
+            const opts = { timeout, proxy: uri };
             const p = new Promise((resolve) => {
                 request.head(getCheckUrl(), opts, (err) => {
                     setNoteStatus(uri, !!err);
@@ -77,4 +79,20 @@ export const checkNotes = async (notes: string[], threadNum: number, cbs?) => {
             cbs.groupCb();
         }
     }
+};
+
+export const getBlockList = () => {
+    return list.blocked;
+};
+
+export const getCheckList = () => {
+    return list.checked;
+};
+
+export const getTrueList = () => {
+    return difference(list.checked, list.blocked);
+};
+
+export const setTimeout = (num: number) => {
+    timeout = num;
 };
