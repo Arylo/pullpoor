@@ -1,6 +1,6 @@
 import express = require("express");
 import { existsSync } from "fs";
-import { merge, sample } from "lodash";
+import { difference, merge, sample, sampleSize } from "lodash";
 import schedule = require("node-schedule");
 import ora = require("ora");
 import { networkInterfaces } from "os";
@@ -9,17 +9,33 @@ import request = require("request");
 import { CacheFilePath } from "../constants";
 import { getArgv } from "../helpers/argv";
 import * as cache from "../helpers/cache";
+import { getNote, list, setNoteStatus } from "../helpers/checker";
 import { exit } from "../helpers/exit";
+import { checkNotes } from "./../helpers/checker";
 
 const argv = getArgv({
     alias: {
         p: "port"
     },
     default: {
-        port: 7000 + parseInt(`${Math.random() * 3000}`, 10)
+        port: 7000 + parseInt(`${Math.random() * 3000}`, 10),
+        thread: 250,
+        timeout: 3000
     },
-    string: ["port"]
+    string: ["port", "thread", "timeout"]
 });
+
+if (typeof argv.port !== "number" || argv.port < 0) {
+    exit("Port Field must number");
+}
+
+if (typeof argv.timeout !== "number" || argv.timeout < 0) {
+    exit("Timeout Field must number");
+}
+
+if (typeof argv.thread !== "number" || argv.thread <= 0) {
+    exit("Thread Field must number");
+}
 
 export const handler = async () => {
     let spinner;
@@ -42,15 +58,15 @@ export const handler = async () => {
     ];
 
     app.use((req, res) => {
-        const proxyUri = sample(core.getNotes());
         const opts = merge(keys.reduce((obj, key) => {
             obj[key] = req[key];
             return obj;
         }, { } as any), {
-            proxy: proxyUri,
-            timeout: 5000
+            proxy: getNote(),
+            timeout: argv.timeout
         });
         request(opts, (err) => {
+            setNoteStatus(opts.proxy, !!err);
             if (err) {
                 res.status(502);
                 res.end();
@@ -95,28 +111,60 @@ export const init = async () => {
 
     try {
         spinner = ora("Catching Notes").start();
-        const list = await core.catchNotes();
-        spinner.succeed(`Catched ${list.length} Notes`);
+        const noteList = await core.catchNotes();
+        spinner.succeed(`Catched ${noteList.length} Notes`);
     } catch (error) {
         spinner.fail();
     }
 
     cache.saveAsync();
 
-    // TODO: 检查代理可用性
+    spinner = ora("Some Notes Checking").start();
+    const num = Math.max(Math.ceil(core.getNotes().length * 0.2), argv.thread);
+    const checkList = sampleSize(core.getNotes(), num);
+    await checkNotes(checkList, argv.thread);
+    spinner.succeed("Some Notes Checked");
+    ora(`Have ${list.checked.length - list.blocked.length} Notes`).start().info();
 };
 
 export const startTimer = () => {
-    let isRunning = false;
+    const isRunningMap = {
+        catch: false,
+        check: false
+    };
     const j = schedule.scheduleJob("*/15 * * * *", async () => {
-        if (isRunning) {
+        if (isRunningMap.catch) {
             return;
         }
-        isRunning = true;
+        isRunningMap.catch = true;
         try {
+            await core.catchNotes();
             cache.saveAsync();
         // tslint:disable-next-line:no-empty
         } catch (error) { }
-        isRunning = false;
+        isRunningMap.catch = false;
+    });
+    schedule.scheduleJob("*/2 * * * *", async () => {
+        if (isRunningMap.check) {
+            return;
+        }
+        isRunningMap.check = true;
+        // 新增检查
+        const newList = difference(core.getNotes(), list.checked);
+        const num = Math.max(Math.ceil(core.getNotes().length * 0.2), argv.thread);
+        await checkNotes(sampleSize(newList, num), argv.thread);
+        // 二次检查
+        const blockList = [ ];
+        const checkList = difference(list.checked, newList, list.blocked);
+        await checkNotes(sampleSize(checkList, Math.ceil(checkList.length * 0.2)), argv.thread, {
+            noteCb: (err, uri) => {
+                if (err) {
+                    blockList.push(uri);
+                }
+            }
+        });
+        // 败者复活
+        checkNotes(sampleSize(difference(list.blocked, blockList), 10), 10);
+        isRunningMap.check = false;
     });
 };
