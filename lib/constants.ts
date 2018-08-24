@@ -3,7 +3,7 @@ import { readdirSync, statSync } from "fs";
 import { tmpdir } from "os";
 import { dirname, resolve } from "path";
 
-export const ROOT_PATH = dirname(findUp.sync("package.json"));
+export const ROOT_PATH = dirname(findUp.sync("package.json", { cwd: __dirname }));
 
 export const p0 = readdirSync(resolve(ROOT_PATH, "bin"))[0];
 
